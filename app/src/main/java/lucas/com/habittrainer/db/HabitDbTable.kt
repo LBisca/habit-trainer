@@ -2,11 +2,12 @@ package lucas.com.habittrainer.db
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
 import lucas.com.habittrainer.Habit
 import java.io.ByteArrayOutputStream
 
-class HabitDbTable (context: Context) {
+class HabitDbTable(context: Context) {
 
     private val dbHelper = HabitTrainerDb(context)
 
@@ -14,19 +15,15 @@ class HabitDbTable (context: Context) {
         val db = dbHelper.writableDatabase
 
         val values = ContentValues()
-        values.put(HabitEntry.TITLE_COL, habit.title)
-        values.put(HabitEntry.DESC_COL, habit.desc)
-        values.put(HabitEntry.IMAGE_COL, toByteArray(habit.image))
-
-        db.beginTransaction()
-        val id = try {
-            val returnValue = db.insert(HabitEntry.TABLE_NAME, null, values)
-            db.setTransactionSuccessful()
-            returnValue
-        } finally {
-            db.endTransaction()
+        with(values) {
+            put(HabitEntry.TITLE_COL, habit.title)
+            put(HabitEntry.DESC_COL, habit.desc)
+            put(HabitEntry.IMAGE_COL, toByteArray(habit.image))
         }
-        db.close()
+
+        val id = db.transaction {
+            insert(HabitEntry.TABLE_NAME, null, values)
+        }
 
         return id
     }
@@ -36,5 +33,20 @@ class HabitDbTable (context: Context) {
         bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream)
         return stream.toByteArray()
     }
+}
 
+private inline fun <T> SQLiteDatabase.transaction(function: SQLiteDatabase.() -> T): T {
+    beginTransaction()
+    val value = try {
+        val returnValue = function()
+        setTransactionSuccessful()
+
+        returnValue
+    } finally {
+        endTransaction()
+    }
+
+    close()
+
+    return value
 }

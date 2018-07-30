@@ -30,9 +30,11 @@ class CreateHabitActivity : AppCompatActivity() {
         }
 
         tv_error.visibility = View.INVISIBLE
+        
+
     }
 
-    fun errorMessage(message: String) {
+    private fun errorMessage(message: String) {
         tv_error.text = message
         tv_error.visibility = View.VISIBLE
     }
